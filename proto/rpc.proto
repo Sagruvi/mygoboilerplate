@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package proxy;
+option go_package = "github.com/sagruvi/goboilerplate";
+service Rpc {
+  rpc AddressSearch(input) returns (Addresses) {}
+  rpc Geocode(request) returns (input) {}
+}
+message input {
+  string input = 1;
+}
+message request {
+  float lat = 1;
+  float lon = 2;
+}
+message Address {
+  string Lat = 1;
+  string Lon = 2;
+}
+
+message Addresses {
+  repeated Address Addresses = 1;
+}
+service User {
+  rpc Get(id) returns (user) {}
+  rpc Register(user) returns (user) {}
+}
+message id {
+  int64 id = 1;
+}
+message user {
+  int64 id = 1;
+  string name = 2;
+}
+

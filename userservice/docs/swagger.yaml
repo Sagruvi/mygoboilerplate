@@ -1,0 +1,71 @@
+definitions:
+  controller.User:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /profile:
+    post:
+      consumes:
+      - application/json
+      description: Retrieves user profile based on provided email and password
+      parameters:
+      - description: User's email
+        in: body
+        name: email
+        required: true
+        schema:
+          type: string
+      - description: User's password
+        in: body
+        name: password
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful operation
+          schema:
+            $ref: '#/definitions/controller.User'
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal server error
+      summary: Get user profile by email and password
+      tags:
+      - users
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of all users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful operation
+          schema:
+            items:
+              $ref: '#/definitions/controller.User'
+            type: array
+        "400":
+          description: Bad request
+        "500":
+          description: Internal server error
+      summary: List all users
+      tags:
+      - users
+swagger: "2.0"

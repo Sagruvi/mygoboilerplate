@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  user:
+    build: ./
+    container_name: userservice
+    networks:
+      - mynetwork
+    depends_on:
+      - postgres
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+
+networks:
+  mynetwork:
+    external: true

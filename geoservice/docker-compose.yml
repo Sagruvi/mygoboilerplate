@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  geo:
+    container_name: geoservice
+    build: ./
+    depends_on:
+      - redis
+    networks:
+      - mynetwork
+  redis:
+    image: redis
+    container_name: redis
+networks:
+  mynetwork:
+    external: true

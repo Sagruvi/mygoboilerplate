@@ -1,0 +1,29 @@
+
+
+// Login godoc
+// @Summary login users
+// @Description login users using JWT tokens
+// @Tags auth
+// @Accept  json
+// @Produce  json
+// @Param user body entity.User true "user credentials"
+// @Success 200 {string} string "valid JWT token"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "error creating token"
+// @Router /login [post]
+
+
+// Register godoc
+// @Summary register users
+// @Description Register users using JWT tokens
+// @Tags auth
+// @Accept  json
+// @Produce  json
+//
+// @Param user body entity.User true "user credentials"
+// @Success 200 {string} string "entity is registered"
+// @Failure 401 {string} string "error taking a claims"
+// @Failure 500 {string} string "entity is already exists"
+// @Failure 500 {string} string "error hashing password"
+// @Router /register [post]
+

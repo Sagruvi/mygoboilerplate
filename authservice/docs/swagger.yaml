@@ -1,0 +1,76 @@
+definitions:
+  controller.User:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: login users using JWT tokens
+      parameters:
+      - description: user credentials
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/controller.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: valid JWT token
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: error creating token
+          schema:
+            type: string
+      summary: login users
+      tags:
+      - auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Register users using JWT tokens
+      parameters:
+      - description: user credentials
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/controller.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: entity is registered
+          schema:
+            type: string
+        "401":
+          description: error taking a claims
+          schema:
+            type: string
+        "500":
+          description: error hashing password
+          schema:
+            type: string
+      summary: register users
+      tags:
+      - auth
+swagger: "2.0"

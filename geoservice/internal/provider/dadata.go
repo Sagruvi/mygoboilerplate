@@ -12,8 +12,9 @@ type GeoProvider interface {
 	AddressSearch(input string) ([]*entity.Address, error)
 	GeoCode(lat, lng string) ([]*entity.Address, error)
 }
+type GeoService struct{}
 
-func Geocode(lat, lng string) ([]*entity.Address, error) {
+func (g GeoService) Geocode(lat, lng string) ([]*entity.Address, error) {
 	start := time.Now()
 	api := dadata.NewDaData("602f4fabeedea0f000f4cee8ab9a5773d800f005", "f57d7df9064c22a9c4a7c61b90109cd44fd7f284")
 	lt, err := strconv.ParseFloat(lat, 32)
@@ -38,7 +39,7 @@ func Geocode(lat, lng string) ([]*entity.Address, error) {
 	Addresses := []*entity.Address{{Lat: addresses[0].Data.City, Lng: addresses[0].Data.Street + " " + addresses[0].Data.House}}
 	return Addresses, nil
 }
-func AddressSearch(input string) ([]*entity.Address, error) {
+func (g GeoService) AddressSearch(input string) ([]*entity.Address, error) {
 	start := time.Now()
 	api := dadata.NewDaData("602f4fabeedea0f000f4cee8ab9a5773d800f005", "f57d7df9064c22a9c4a7c61b90109cd44fd7f284")
 

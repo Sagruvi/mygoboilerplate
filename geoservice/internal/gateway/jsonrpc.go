@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"context"
 	"log"
 	"main/internal/entity"
 	"main/internal/service"
@@ -12,7 +13,7 @@ import (
 
 type Gateway interface {
 	GeoCode(lat, lng float64, reply *pb.Input) error
-	AddressSearch(input string, reply *pb.Addresses) error
+	AddressSearch(ctx context.Context, input *pb.Input) (*pb.Addresses, error)
 	Run(port string) error
 }
 
@@ -41,15 +42,16 @@ func (r JsonRPCGateway) GeoCode(lat, lng float64, reply *pb.Input) error {
 	return nil
 }
 
-func (r JsonRPCGateway) AddressSearch(input string, reply *pb.Addresses) error {
-	rep, err := r.service.DadataSearchApi(input)
+func (r JsonRPCGateway) AddressSearch(ctx context.Context, input *pb.Input) (*pb.Addresses, error) {
+	rep, err := r.service.DadataSearchApi(input.Input)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	reply := &pb.Addresses{}
 	for _, address := range rep.Addresses {
 		reply.Addresses = append(reply.Addresses, &pb.Address{Lat: address.Lat, Lon: address.Lng})
 	}
-	return nil
+	return reply, nil
 }
 func (r JsonRPCGateway) Run(port string) error {
 	rpc.Register(r)

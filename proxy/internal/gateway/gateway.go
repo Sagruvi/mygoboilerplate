@@ -2,111 +2,91 @@ package gateway
 
 import (
 	"encoding/json"
-	"google.golang.org/grpc"
-	"log"
 	"main/internal/entity"
+	"main/internal/service"
 	"net/http"
 )
 
-type GatewayFactory interface {
-	GetGateway(service, port string) Gateway
-}
-type Factory struct{}
-
-func (f Factory) GetGateway(service, port string) Gateway {
-	switch service {
-	case "geoservice":
-		return NewGeoGateway(service + ":" + port)
-	case "authservice":
-		return NewAuthGateway(service + ":" + port)
-	case "userservice":
-		return NewUserGateway(service + ":" + port)
-	default:
-		return nil
-	}
-}
-
 type Gateway interface {
-	Proxy1(w http.ResponseWriter, r *http.Request)
-	Proxy2(w http.ResponseWriter, r *http.Request)
+	Geocode(w http.ResponseWriter, r *http.Request)
+	Search(w http.ResponseWriter, r *http.Request)
+	Profile(w http.ResponseWriter, r *http.Request)
+	List(w http.ResponseWriter, r *http.Request)
+	Register(w http.ResponseWriter, r *http.Request)
+	Login(w http.ResponseWriter, r *http.Request)
 }
-type GeoGateway struct {
-	client *grpc.ClientConn
-}
-
-func NewGeoGateway(url string) Gateway {
-	conn, err := grpc.Dial(url, grpc.WithInsecure())
-	if err != nil {
-		panic(err)
-	}
-	return &GeoGateway{
-		client: conn,
-	}
-}
-func (g *GeoGateway) Proxy1(w http.ResponseWriter, r *http.Request) {
-	var request entity.GeocodeRequest
-	err := json.NewDecoder(r.Body).Decode(&request)
-	if err != nil {
-		log.Println(err)
-	}
-
-}
-func (g *GeoGateway) Proxy2(w http.ResponseWriter, r *http.Request) {
-	var request entity.SearchRequest
-	err := json.NewDecoder(r.Body).Decode(&request)
-	if err != nil {
-		log.Println(err)
-	}
+type Controller struct {
+	service.Servicer
 }
 
-type AuthGateway struct {
-	client *grpc.ClientConn
+func NewGateway(userPort, geoPort string) Gateway {
+	return &Controller{service.NewService(userPort, geoPort)}
 }
+func (c *Controller) Geocode(w http.ResponseWriter, r *http.Request) {
+	var address entity.GeocodeRequest
+	err := json.NewDecoder(r.Body).Decode(&address)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+	res, err := c.Servicer.Geocode(address)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+	json.NewEncoder(w).Encode(res)
+}
+func (c *Controller) Search(w http.ResponseWriter, r *http.Request) {
+	var address entity.SearchRequest
+	err := json.NewDecoder(r.Body).Decode(&address)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+	res, err := c.Servicer.Search(address.Query)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
 
-func NewAuthGateway(url string) Gateway {
-	conn, err := grpc.Dial(url, grpc.WithInsecure())
+	json.NewEncoder(w).Encode(res)
+}
+func (c *Controller) Profile(w http.ResponseWriter, r *http.Request) {
+	var user entity.User
+	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	return &AuthGateway{
-		client: conn,
-	}
-}
-func (g *AuthGateway) Proxy1(w http.ResponseWriter, r *http.Request) {
-	var res entity.User
-	err := json.NewDecoder(r.Body).Decode(&res)
+	res, err := c.Servicer.Get(user.Email, user.Password)
 	if err != nil {
-		log.Println(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
+	json.NewEncoder(w).Encode(res)
 }
-func (g *AuthGateway) Proxy2(w http.ResponseWriter, r *http.Request) {
-	var res entity.User
-	err := json.NewDecoder(r.Body).Decode(&res)
+func (c *Controller) List(w http.ResponseWriter, r *http.Request) {
+	res, err := c.Servicer.List()
 	if err != nil {
-		log.Println(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
+	json.NewEncoder(w).Encode(res)
 }
-
-type UserGateway struct {
-	client *grpc.ClientConn
-}
-
-func NewUserGateway(url string) Gateway {
-	conn, err := grpc.Dial(url, grpc.WithInsecure())
+func (c *Controller) Register(w http.ResponseWriter, r *http.Request) {
+	var user entity.User
+	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	return &UserGateway{
-		client: conn,
-	}
-}
-func (g *UserGateway) Proxy1(w http.ResponseWriter, r *http.Request) {
-	var res entity.User
-	err := json.NewDecoder(r.Body).Decode(&res)
+	res, err := c.Servicer.Register(user)
 	if err != nil {
-		log.Println(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
+	json.NewEncoder(w).Encode(res)
 }
-func (g *UserGateway) Proxy2(w http.ResponseWriter, r *http.Request) {
-
+func (c *Controller) Login(w http.ResponseWriter, r *http.Request) {
+	var user entity.User
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+	res, err := c.Servicer.Login(user.Email, user.Password)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+	json.NewEncoder(w).Encode(res)
 }

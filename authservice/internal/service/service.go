@@ -1,41 +1,33 @@
 package service
 
 import (
+	"context"
+	"main/internal/consumer"
 	"main/internal/entity"
-	"main/internal/userconsumer"
-	pb "main/proto"
 )
 
 type Servicer interface {
-	SaveUser(Email, password string) (entity.User, error)
-	CheckUser(Email, password string) error
+	SaveUser(user entity.User) (entity.User, error)
+	CheckUser(Email, password string) (entity.User, error)
 }
 type Service struct {
-	userconsumer.UserConsumer
+	consumer.UserConsumer
 }
 
 func NewService(serverurl string) *Service {
 	return &Service{
-		userconsumer.NewUserConsumer(serverurl),
+		consumer.NewUserConsumer(serverurl),
 	}
 }
 
-func (s *Service) SaveUser(Email, password string) (entity.User, error) {
-	u := pb.User{
-		Email:    Email,
-		Password: password,
-	}
-	user, err := s.UserConsumer.CreateUser(&u)
+func (s *Service) SaveUser(us entity.User) (entity.User, error) {
+	_, err := s.UserConsumer.CreateUser(context.Background(), us)
 	if err != nil {
 		return entity.User{}, err
 	}
-	return user, nil
+	return us, nil
 }
 
-func (s *Service) CheckUser(Email, password string) error {
-	u := pb.AuthOrLogin{
-		Email:    Email,
-		Password: password,
-	}
-	return s.UserConsumer.CheckUser(&u)
+func (s *Service) CheckUser(Email, password string) (entity.User, error) {
+	return s.UserConsumer.CheckUser(context.Background(), Email, password)
 }

@@ -4,24 +4,19 @@ import (
 	"log"
 	_ "main/docs"
 	"main/internal/provider"
-	"main/internal/service"
 	"os"
 )
 
 func Run() {
-	secret := os.Getenv("SECRET")
-	if secret == "" {
-		secret = "secret"
+	clientPort := os.Getenv("AUTH_SERVICE_PORT")
+	if clientPort == "" {
+		clientPort = "1234"
 	}
-	port := os.Getenv("AUTH_SERVICE_PORT")
-	if port == "" {
-		port = "8080"
+	serverPort := os.Getenv("AUTH_SERVER_PORT")
+	if serverPort == "" {
+		serverPort = "15001"
 	}
-	serverurl := os.Getenv("SERVER_URL")
-	if serverurl == "" {
-		serverurl = "userservice:15002"
-	}
-	provider.Run(port)
-	service.NewService(serverurl)
-	log.Println("Сервис авторизации запущен на порту " + port)
+	prov := provider.NewProvider(clientPort, serverPort)
+	prov.Run()
+	log.Println("Сервис авторизации запущен на порту " + serverPort)
 }

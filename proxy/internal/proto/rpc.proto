@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package proxy;
 option go_package = "github.com/sagruvi/mygoboilerplate";
-
-
 service Rpc {
   rpc AddressSearch(input) returns (Addresses) {}
   rpc Geocode(request) returns (input) {}
@@ -26,6 +24,11 @@ message Addresses {
 service User {
   rpc Get(authOrLogin) returns (user) {}
   rpc Register(user) returns (user) {}
+  rpc List(Empty) returns (listOfUsers) {}
+}
+message Empty {}
+message listOfUsers {
+  repeated user users = 1;
 }
 message authOrLogin {
   string email = 1;

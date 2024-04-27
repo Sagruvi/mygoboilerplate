@@ -8,19 +8,6 @@ services:
       - "8080:8080"
     networks:
       - mynetwork
-    environment:
-      GEO_SERVICE_URL: http://geoservice:8080
-      AUTH_SERVICE_URL: http://authservice:8080
-      USER_SERVICE_URL: http://userservice:8080
-  hugo:
-    image: klakegg/hugo:0.101.0-ext-alpine
-    container_name: hugo
-    command: server
-    entrypoint: hugo
-    volumes:
-        - "./hugo:/src"
-    networks:
-        - mynetwork
 
 networks:
   mynetwork:

@@ -2,11 +2,9 @@ package app
 
 import (
 	"github.com/go-chi/chi"
-	httpSwagger "github.com/swaggo/http-swagger"
-	"log"
-	"main/internal/consumer"
+	"github.com/go-chi/jwtauth"
+	"main/internal/gateway"
 	"net/http"
-
 	"os"
 )
 
@@ -15,27 +13,36 @@ func Run() {
 	if port == "" {
 		port = "8080"
 	}
-	geoport := os.Getenv("GEOSERVICE_PORT")
-	if geoport == "" {
-		geoport = "1234"
+	userport := os.Getenv("USER_SERVICE_PORT")
+	if userport == "" {
+		userport = "userservice:15002"
 	}
+	geoport := os.Getenv("GEO_SERVICE_PORT")
+	if geoport == "" {
+		geoport = "geoservice:15003"
+	}
+	newjwt := jwtauth.New("HS256", []byte("secret"), nil)
+	con := gateway.NewGateway(userport, geoport)
 	r := chi.NewRouter()
 	r.Group(func(r chi.Router) {
-		r.Get("/swagger/*", httpSwagger.Handler(
-			httpSwagger.URL("http://proxy:"+port+"/swagger/doc.json"),
-		))
+		r.Post("/api/auth/register", con.Register)
+		r.Post("/api/auth/login", con.Login)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get("/geoservice/swagger/*", httpSwagger.Handler(
-			httpSwagger.URL("http://geoservice:"+geoport+"/swagger/doc.json"),
-		))
+		r.Use(jwtauth.Verifier(newjwt))
+		r.Use(jwtauth.Authenticator)
+		r.Get("/api/user/profile", con.Profile)
+		r.Get("/api/user/list", con.List)
 	})
-	http.Handle("/", r)
+	r.Group(func(r chi.Router) {
+		r.Use(jwtauth.Verifier(newjwt))
+		r.Use(jwtauth.Authenticator)
+		r.Get("/api/geo/geocode", con.Geocode)
+		r.Get("/api/geo/search", con.Search)
+	})
 
-	log.Printf("Starting proxy server on port %s\n", port)
-	consumer.NewGeoConsumer(geoport)
-	err := http.ListenAndServe(":"+port, nil)
+	err := http.ListenAndServe(":"+port, r)
 	if err != nil {
-		log.Fatalf("Failed to start proxy server: %v", err)
+		panic(err)
 	}
 }

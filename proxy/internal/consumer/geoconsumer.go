@@ -3,47 +3,40 @@ package consumer
 import (
 	"context"
 	"google.golang.org/grpc"
-	"log"
 	"main/internal/entity"
 	pb "main/internal/proto"
 )
 
-type GeoConsumer interface {
-	Search(input *pb.Input) (entity.Address, error)
-	Geocode(address *pb.Request) (entity.Address, error)
-}
-
-type geoConsumer struct {
+type GeoConsumer struct {
 	pb.RpcClient
 }
 
-func NewGeoConsumer(url string) GeoConsumer {
-	conn, err := grpc.Dial(url, grpc.WithInsecure())
+func NewGeoConsumer(port string) GeoConsumer {
+	conn, err := grpc.Dial(port, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("Ошибка при подключении к серверу: %v", err)
+		panic(err)
 	}
-	defer conn.Close()
-	return &geoConsumer{
-		RpcClient: pb.NewRpcClient(conn),
+	return GeoConsumer{
+		pb.NewRpcClient(conn),
 	}
 }
-func (g *geoConsumer) Search(input *pb.Input) (entity.Address, error) {
-	res, err := g.RpcClient.AddressSearch(context.Background(), input)
+func (c GeoConsumer) Geocode(address entity.GeocodeRequest) (string, error) {
+	req := pb.Request{Lat: float32(address.Lat), Lon: float32(address.Lng)}
+	res, err := c.RpcClient.Geocode(context.Background(), &req, nil)
 	if err != nil {
-		return entity.Address{}, err
+		return "", err
 	}
-	return entity.Address{
-		Lat: res.String(),
-		Lng: res.String(),
-	}, nil
+	return res.Input, nil
 }
-func (g *geoConsumer) Geocode(address *pb.Request) (entity.Address, error) {
-	res, err := g.RpcClient.Geocode(context.Background(), address)
+func (c GeoConsumer) AddressSearch(address string) ([]entity.Address, error) {
+	req := pb.Input{Input: address}
+	res, err := c.RpcClient.AddressSearch(context.Background(), &req, nil)
 	if err != nil {
-		return entity.Address{}, err
+		return nil, err
 	}
-	return entity.Address{
-		Lat: res.String(),
-		Lng: res.String(),
-	}, nil
+	addresses := make([]entity.Address, 0)
+	for _, v := range res.Addresses {
+		addresses = append(addresses, entity.Address{Lat: v.Lat, Lng: v.Lon})
+	}
+	return addresses, nil
 }

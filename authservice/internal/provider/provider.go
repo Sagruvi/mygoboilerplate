@@ -1,68 +1,59 @@
 package provider
 
 import (
+	"context"
 	"google.golang.org/grpc"
 	"log"
+	"main/internal/entity"
+	pb "main/internal/proto"
 	"main/internal/service"
-	pb "main/proto"
 	"net"
 )
 
-type AuthProvider interface {
-	Login(reply *pb.User)
-	Register(reply *pb.User)
+type Provider interface {
+	Get(ctx context.Context, req *pb.AuthOrLogin) (*pb.User, error)
+	Register(ctx context.Context, req *pb.User) (*pb.User, error)
 }
 
-type Provider struct {
-	service service.Servicer
+type AuthProvider struct {
+	service.Servicer
+	pb.UnimplementedUserServer
+	serverPort string
 }
 
-func Run(port string) {
-	listen, err := net.Listen("tcp", ":"+port)
-	if err != nil {
-		log.Println(err)
-		panic(err)
-	}
-	server := grpc.NewServer()
-	pb.RegisterRpcServer(server, &pb.UnimplementedRpcServer{})
-
-	log.Println("Запуск gRPC сервера...")
-	if err := server.Serve(listen); err != nil {
-		log.Println(err)
-		panic(err)
-	}
-
+func NewProvider(clientPort, serverPort string) *AuthProvider {
+	return &AuthProvider{service.NewService(clientPort), pb.UnimplementedUserServer{}, serverPort}
 }
-func (p *Provider) Login(loginRequest *pb.AuthOrLogin) (*pb.User, error) {
-	rep, err := p.service.SaveUser(loginRequest.Email, loginRequest.Password)
+
+func (a *AuthProvider) Get(ctx context.Context, req *pb.AuthOrLogin) (*pb.User, error) {
+	user, err := a.Servicer.CheckUser(req.Email, req.Password)
 	if err != nil {
-		log.Println(err)
-		return &pb.User{}, err
+		return nil, err
 	}
-	res := pb.User{
-		Id:       int64(rep.Id),
-		Name:     rep.Username,
-		Password: "",
-		Email:    rep.Email,
-	}
-	return &res, nil
+	return &pb.User{Email: user.Email, Id: int64(user.Id), Name: user.Username, Password: user.Password}, nil
 }
-func (p *Provider) Register(loginRequest *pb.AuthOrLogin) (*pb.User, error) {
-	err := p.service.CheckUser(loginRequest.Email, loginRequest.Password)
+func (a *AuthProvider) Register(ctx context.Context, req *pb.User) (*pb.User, error) {
+	user, err := a.Servicer.SaveUser(entity.User{
+		Id:       int(req.Id),
+		Email:    req.Email,
+		Password: req.Password,
+		Username: req.Name,
+	})
 	if err != nil {
-		log.Println(err)
-		return &pb.User{}, err
+		return nil, err
 	}
-	rep, err := p.service.SaveUser(loginRequest.Email, loginRequest.Password)
+	return &pb.User{Email: user.Email, Id: int64(user.Id), Name: user.Username, Password: user.Password}, nil
+}
+
+func (a *AuthProvider) Run() {
+	g := grpc.NewServer()
+	pb.RegisterUserServer(g, a)
+
+	lis, err := net.Listen("tcp", ":"+a.serverPort)
 	if err != nil {
-		log.Println(err)
-		return &pb.User{}, err
+		log.Fatalf("failed to listen: %v", err)
 	}
-	res := pb.User{
-		Id:       int64(rep.Id),
-		Name:     rep.Username,
-		Password: rep.Password,
-		Email:    rep.Email,
+	if err := g.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
 	}
-	return &res, nil
 }

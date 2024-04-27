@@ -3,54 +3,69 @@ package consumer
 import (
 	"context"
 	"google.golang.org/grpc"
-	"log"
 	"main/internal/entity"
 	pb "main/internal/proto"
 )
 
-type UserConsumer interface {
-	CheckUser(login *pb.AuthOrLogin) error
-	CreateUser(user *pb.User) (entity.User, error)
-}
-
-type userConsumer struct {
+type UserConsumer struct {
 	pb.UserClient
 }
 
-func NewUserConsumer(url string) UserConsumer {
-	conn, err := grpc.Dial(url, grpc.WithInsecure())
+func NewUserConsumer(port string) UserConsumer {
+	conn, err := grpc.Dial(port, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("Ошибка при подключении к серверу: %v", err)
+		panic(err)
 	}
-	defer conn.Close()
-
-	client := pb.NewUserClient(conn)
-	return &userConsumer{
-		client,
+	return UserConsumer{
+		pb.NewUserClient(conn),
 	}
 }
 
-func (u *userConsumer) CheckUser(login *pb.AuthOrLogin) error {
-	user, err := u.UserClient.Get(context.Background(), login)
-	if err != nil {
-		return err
-	}
+func (u UserConsumer) Get(email, password string) (entity.User, error) {
 
-	if user.GetPassword() != login.GetPassword() || user.GetEmail() != login.GetEmail() {
-		return err
+	us, err := u.UserClient.Get(context.Background(), &pb.AuthOrLogin{
+		Email:    email,
+		Password: password,
+	}, nil)
+	if err != nil {
+		return entity.User{}, err
 	}
-	return nil
+	return entity.User{
+		Id:       int(us.Id),
+		Username: us.Name,
+		Email:    us.Email,
+		Password: us.Password,
+	}, nil
 }
-
-func (u *userConsumer) CreateUser(user *pb.User) (entity.User, error) {
-	us, err := u.UserClient.Register(context.Background(), user)
+func (u UserConsumer) Register(user entity.User) (entity.User, error) {
+	us, err := u.UserClient.Register(context.Background(), &pb.User{
+		Name:     user.Username,
+		Email:    user.Email,
+		Password: user.Password,
+		Id:       int64(user.Id),
+	})
 	if err != nil {
-		return entity.User{}, nil
+		return entity.User{}, err
 	}
-	res := entity.User{
-		Password: us.GetPassword(),
-		Email:    us.GetName(),
-		Id:       int(us.GetId()),
+	return entity.User{
+		Id:       int(us.Id),
+		Username: us.Name,
+		Email:    us.Email,
+		Password: us.Password,
+	}, nil
+}
+func (u UserConsumer) List() ([]entity.User, error) {
+	us, err := u.UserClient.List(context.Background(), &pb.Empty{}, nil)
+	if err != nil {
+		return []entity.User{}, err
 	}
-	return res, nil
+	users := make([]entity.User, 0)
+	for _, v := range us.Users {
+		users = append(users, entity.User{
+			Id:       int(v.Id),
+			Username: v.Name,
+			Email:    v.Email,
+			Password: v.Password})
+	}
+	return users, nil
 }

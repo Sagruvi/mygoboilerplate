@@ -8,11 +8,11 @@ import (
 )
 
 func Run() {
-	clientPort := os.Getenv("AUTH_SERVICE_PORT")
+	clientPort := os.Getenv("USER_SERVICE_PORT")
 	if clientPort == "" {
-		clientPort = "1234"
+		clientPort = "15002"
 	}
-	serverPort := os.Getenv("AUTH_SERVER_PORT")
+	serverPort := os.Getenv("AUTH_SERVICE_PORT")
 	if serverPort == "" {
 		serverPort = "15001"
 	}

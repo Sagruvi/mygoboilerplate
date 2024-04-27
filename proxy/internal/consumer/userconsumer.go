@@ -22,28 +22,10 @@ func NewUserConsumer(port string) UserConsumer {
 }
 
 func (u UserConsumer) Get(email, password string) (entity.User, error) {
-
 	us, err := u.UserClient.Get(context.Background(), &pb.AuthOrLogin{
 		Email:    email,
 		Password: password,
 	}, nil)
-	if err != nil {
-		return entity.User{}, err
-	}
-	return entity.User{
-		Id:       int(us.Id),
-		Username: us.Name,
-		Email:    us.Email,
-		Password: us.Password,
-	}, nil
-}
-func (u UserConsumer) Register(user entity.User) (entity.User, error) {
-	us, err := u.UserClient.Register(context.Background(), &pb.User{
-		Name:     user.Username,
-		Email:    user.Email,
-		Password: user.Password,
-		Id:       int64(user.Id),
-	})
 	if err != nil {
 		return entity.User{}, err
 	}

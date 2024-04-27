@@ -11,7 +11,7 @@ import (
 func Run() {
 	port := os.Getenv("GEO_SERVICE_PORT")
 	if port == "" {
-		port = "1234"
+		port = "15003"
 	}
 	err := gateway.NewGRPCGateway(service.NewService()).Run(port)
 	if err != nil {

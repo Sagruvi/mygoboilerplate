@@ -11,3 +11,5 @@ COPY . .
 RUN go build -o geoservice ./cmd/
 
 CMD ["./geoservice"]
+
+EXPOSE 15003

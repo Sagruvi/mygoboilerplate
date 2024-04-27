@@ -16,17 +16,19 @@ type Servicer interface {
 type Service struct {
 	user consumer.UserConsumer
 	geo  consumer.GeoConsumer
+	auth consumer.AuthConsumer
 }
 
-func NewService(userConsumerPort, geoConsumerPort string) Servicer {
+func NewService(userConsumerPort, geoConsumerPort, authConsumerPort string) Servicer {
 	return Service{
 		user: consumer.NewUserConsumer(userConsumerPort),
 		geo:  consumer.NewGeoConsumer(geoConsumerPort),
+		auth: consumer.NewAuthConsumer(authConsumerPort),
 	}
 }
 
 func (s Service) Login(email, password string) (entity.User, error) {
-	return s.user.Get(email, password)
+	return s.auth.Login(email, password)
 }
 func (s Service) Geocode(address entity.GeocodeRequest) (string, error) {
 	return s.geo.Geocode(address)
@@ -38,7 +40,7 @@ func (s Service) Get(email, password string) (entity.User, error) {
 	return s.user.Get(email, password)
 }
 func (s Service) Register(user entity.User) (entity.User, error) {
-	return s.user.Register(user)
+	return s.auth.Register(user)
 
 }
 func (s Service) List() ([]entity.User, error) {

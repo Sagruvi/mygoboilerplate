@@ -19,8 +19,8 @@ type Controller struct {
 	service.Servicer
 }
 
-func NewGateway(userPort, geoPort string) Gateway {
-	return &Controller{service.NewService(userPort, geoPort)}
+func NewGateway(userPort, geoPort, authPort string) Gateway {
+	return &Controller{service.NewService(userPort, geoPort, authPort)}
 }
 func (c *Controller) Geocode(w http.ResponseWriter, r *http.Request) {
 	var address entity.GeocodeRequest

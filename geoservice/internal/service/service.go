@@ -49,7 +49,7 @@ func (s *Service) DadataGeocodeApi(geocodeRequest entity.GeocodeRequest) (string
 	if err == nil {
 		return cachedResponse.Query, nil
 	}
-	addresses, err := provider.Geocode(address.Lat, address.Lng)
+	addresses, err := provider.GeoService{}.Geocode(address.Lat, address.Lng)
 	if err != nil {
 		return "", err
 	}
@@ -69,7 +69,7 @@ func (s *Service) DadataSearchApi(query string) (entity.SearchResponse, error) {
 	if err == nil {
 		return cachedResponse, nil
 	}
-	addresses, err := provider.AddressSearch(query)
+	addresses, err := provider.GeoService{}.AddressSearch(query)
 	if err != nil {
 		return entity.SearchResponse{}, err
 	}
